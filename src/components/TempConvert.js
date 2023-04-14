@@ -2,13 +2,14 @@ import React from "react";
 import { useState } from "react";
 //import { useEffect } from "react";
 
-export default function TempConvert(props, currTemp) {
+export default function TempConvert(props) {
   const [temp, setTemp] = useState(0);
   const [unit, setUnit] = useState("C");
 
   const oppositeUnit = unit === "C" ? "F" : "C";
   //setTemp(currTemp);
   const convert = () => {
+    setTemp(props.currTemp)
     if (unit === "C") {
       const newT = temp * 1.8 + 32;
       setTemp(Math.round(newT));
