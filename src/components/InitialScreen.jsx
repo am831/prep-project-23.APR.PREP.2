@@ -142,7 +142,7 @@ export function BigCard({ city, screenWidth, screenHeight }) {
 
   var api_url = "https://api.openweathermap.org/data/2.5/weather?q=" + city;
 
-  if (unit === "C") {
+  if (unit === "F") {
     api_url += "&units=metric";
   } else {
     api_url += "&units=imperial";
@@ -194,6 +194,7 @@ export function BigCard({ city, screenWidth, screenHeight }) {
   };
 
   const speed = unit === "C" ? "kph" : "mph";
+  const oppositeUnit = unit === "C" ? "F" : "C";
 
   const handleClick = () => {
     setCity(city);
@@ -223,7 +224,7 @@ export function BigCard({ city, screenWidth, screenHeight }) {
 
             <div align="center">
               <MainScreenTemp
-                text={results.main.temp + "°" + unit}
+                text={results.main.temp + "°" + oppositeUnit}
                 color="White"
               />{" "}
               <br></br>
@@ -249,6 +250,7 @@ export function BigCard({ city, screenWidth, screenHeight }) {
 }
 
 export function BigCardStatContainer({ screenWidth, results, unit, speed }) {
+  const oppositeUnit = unit === "C" ? "F" : "C";
   if (screenWidth > 700) {
     return (
       <div id="container" style={{ minHeight: "50px" }}>
@@ -275,7 +277,7 @@ export function BigCardStatContainer({ screenWidth, results, unit, speed }) {
             <div class="child" style={{ width: "25%" }}>
               <BigCardStatArea
                 firstLine={"Feel like"}
-                secondLine={results.main.feels_like + "°" + unit}
+                secondLine={results.main.feels_like + "°" + oppositeUnit}
               />
             </div>
             <div class="child" style={{ width: "25%" }}>
