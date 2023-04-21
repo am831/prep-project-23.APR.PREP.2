@@ -32,6 +32,7 @@ const WeatherStore = ({ children }) => {
   const [weeklyForecast, setWeeklyForecast] = useState(null);
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [screenHeight, setScreenHeight] = useState(window.innerHeight);
+  const [noLocation, setNoLocation] = useState(false);
 
   const cityHandler = (city) => {
     if (city === "Your location") {
@@ -109,40 +110,50 @@ const WeatherStore = ({ children }) => {
     }
   };
 
+  const options = {
+    timeout: 5000,
+  };
+
   useEffect(() => {
-    if (city === "Your location") {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          let coordX = position.coords.latitude;
-          let coordY = position.coords.longitude;
-          setLocation({ lat: coordX, lng: coordY });
-          fetch(
-            "https://api.openweathermap.org/geo/1.0/reverse?lat=" +
-              coordX +
-              "&lon=" +
-              coordY +
-              "&appid=" +
-              process.env.REACT_APP_APIKEY
-          )
-            .then((res) => {
-              return res.json();
-            })
-            .then((result) => {
-              setCity(result[0].name);
-              setYourLocation(result[0].name);
-              setCondition(result.weather[0].id);
-              setLocation({
-                lat: parseFloat(result[0].lat),
-                lng: parseFloat(result[0].lon),
-              });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        let coordX = position.coords.latitude;
+        let coordY = position.coords.longitude;
+        setLocation({ lat: coordX, lng: coordY });
+        fetch(
+          "https://api.openweathermap.org/geo/1.0/reverse?lat=" +
+            coordX +
+            "&lon=" +
+            coordY +
+            "&appid=" +
+            process.env.REACT_APP_APIKEY
+        )
+          .then((res) => {
+            return res.json();
+          })
+          .then((result) => {
+            setCity(result[0].name);
+            setYourLocation(result[0].name);
+            setCondition(result.weather[0].id);
+            setLocation({
+              lat: parseFloat(result[0].lat),
+              lng: parseFloat(result[0].lon),
             });
-        },
-        (err) => {
-          console.log("Error:");
-          console.log(err);
-        }
-      );
-    }
+          });
+      },
+      (err) => {
+        console.log("Error:");
+        console.log(err);
+        let coordY = 40.73061;
+        let coordX = -73.935242;
+        setLocation({ lat: coordX, lng: coordY });
+        setCity("New York City");
+        console.log("Hello");
+        setYourLocation("New York City");
+        setNoLocation(true);
+      },
+      options
+    );
   }, []);
 
   useEffect(() => {
@@ -178,17 +189,17 @@ const WeatherStore = ({ children }) => {
   useEffect(() => {
     if (results !== null) {
       if (unit === "F") {
-        let newT = results.main.feels_like * 1.8 + 32;
+        let newT = results.main.temp * 1.8 + 32;
         setTemp(newT);
       } else {
-        setTemp(results.main.feels_like);
+        setTemp(results.main.temp);
       }
     }
   }, [results]);
 
   useEffect(() => {
     if (!results) return;
-  
+
     const fetchForecast = async () => {
       try {
         const response = await fetch(
@@ -196,38 +207,65 @@ const WeatherStore = ({ children }) => {
         );
         const data = await response.json();
         console.log("Forecast Data: ", data);
-  
+
         // Hourly Forecast: slice the list array to get the next 24 hours of data
-        const hourlyForecastData = data.list.slice(0, 8).map((item) => ({
-          date: item.dt_txt,
-          temp: item.main.temp,
-          description: item.weather[0].description,
-          icon: item.weather[0].icon,
-        }));
-        setHourlyForecast(hourlyForecastData);
-  
+        if (unit === "C") {
+          const hourlyForecastData = data.list.slice(0, 8).map((item) => ({
+            date: item.dt_txt,
+            temp: item.main.temp,
+            description: item.weather[0].description,
+            icon: item.weather[0].icon,
+          }));
+          setHourlyForecast(hourlyForecastData);
+        } else {
+          const hourlyForecastData = data.list.slice(0, 8).map((item) => ({
+            date: item.dt_txt,
+            temp: (item.main.temp * 1.8 + 32).toFixed(2),
+            description: item.weather[0].description,
+            icon: item.weather[0].icon,
+          }));
+          setHourlyForecast(hourlyForecastData);
+        }
+
         // Weekly Forecast: group the list array by date to get 7 days of data
-        const weeklyForecastData = data.list.reduce((acc, item) => {
-          const date = item.dt_txt.split(" ")[0];
-          const hour = item.dt_txt.split(" ")[1];
-          if (hour === "12:00:00") {
-            acc.push({
-              date,
-              temp: item.main.temp,
-              description: item.weather[0].description,
-              icon: item.weather[0].icon,
-            });
-          }
-          return acc;
-        }, []);
-        setWeeklyForecast(weeklyForecastData.slice(0, 7));
+        if (unit === "C") {
+          const weeklyForecastData = data.list.reduce((acc, item) => {
+            const date = item.dt_txt.split(" ")[0];
+            const hour = item.dt_txt.split(" ")[1];
+            if (hour === "12:00:00") {
+              acc.push({
+                date,
+                temp: item.main.temp,
+                description: item.weather[0].description,
+                icon: item.weather[0].icon,
+              });
+            }
+            return acc;
+          }, []);
+          setWeeklyForecast(weeklyForecastData.slice(0, 7));
+        } else {
+          const weeklyForecastData = data.list.reduce((acc, item) => {
+            const date = item.dt_txt.split(" ")[0];
+            const hour = item.dt_txt.split(" ")[1];
+            if (hour === "12:00:00") {
+              acc.push({
+                date,
+                temp: (item.main.temp * 1.8 + 32).toFixed(2),
+                description: item.weather[0].description,
+                icon: item.weather[0].icon,
+              });
+            }
+            return acc;
+          }, []);
+          setWeeklyForecast(weeklyForecastData.slice(0, 7));
+        }
       } catch (error) {
         console.log("Error fetching forecast data: ", error);
       }
     };
-  
+
     fetchForecast();
-  }, [results, location]);
+  }, [results, location, unit, city]);
 
   const weatherStoreValues = {
     location,
@@ -265,7 +303,8 @@ const WeatherStore = ({ children }) => {
     screenWidth,
     setScreenWidth,
     screenHeight,
-    setScreenHeight
+    setScreenHeight,
+    noLocation,
   };
 
   return (

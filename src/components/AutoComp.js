@@ -10,6 +10,15 @@ import "@reach/combobox/styles.css";
 import { useEffect } from "react";
 import React from "react";
 
+// Function to check whether a given place has streetweather data
+const hasStreetWeatherData = async (place) => {
+  const response = await fetch(
+    `https://api.openweathermap.org/data/2.5/weather?q=${place}&appid=${process.env.REACT_APP_APIKEY}`
+  );
+  const data = await response.json();
+  return data.cod === 200;
+};
+
 export default function AutoComp(props) {
   const {
     ready,
@@ -17,10 +26,22 @@ export default function AutoComp(props) {
     setValue,
     suggestions: { status, data },
     clearSuggestions,
-  } = usePlacesAutocomplete();
+  } = usePlacesAutocomplete({
+    // Filter function that only includes suggestions with streetweather data
+    requestOptions: {
+      types: ["(cities)"],
+    },
+    debounce: 300,
+    filter: (suggestion) => hasStreetWeatherData(suggestion),
+  });
 
   useEffect(() => {
-    setValue(props.city, false);
+    if (!props.city) {
+      setValue("New York", false);
+      props.cityHandler("New York");
+    } else {
+      setValue(props.city, false);
+    }
   }, [props.city]);
 
   const handleSelect = async (address) => {
